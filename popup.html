@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>一键存图</title>
+  <link rel="stylesheet" href="styles/popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>📷 一键存图</h1>
+    </header>
+
+    <main class="main">
+      <!-- 页面信息 -->
+      <div class="page-info" id="pageInfo">
+        <p class="page-title" id="pageTitle">正在获取页面信息...</p>
+        <p class="image-count" id="imageCount">-</p>
+      </div>
+
+      <!-- 设置区域 -->
+      <div class="settings">
+        <label class="setting-item">
+          <span>图片格式：</span>
+          <select id="imageFormat">
+            <option value="all">全部</option>
+            <option value="jpg,jpeg,png,gif,webp">JPG/PNG/GIF/WebP</option>
+            <option value="jpg,jpeg">仅 JPG</option>
+            <option value="png">仅 PNG</option>
+            <option value="webp">仅 WebP</option>
+          </select>
+        </label>
+
+        <label class="setting-item">
+          <span>最大数量：</span>
+          <input type="number" id="maxCount" value="100" min="1" max="1000">
+        </label>
+
+        <label class="setting-item setting-checkbox">
+          <input type="checkbox" id="autoScroll" checked>
+          <span>自动滚动加载更多图片</span>
+        </label>
+      </div>
+
+      <!-- 进度区域 -->
+      <div class="progress-section" id="progressSection" style="display: none;">
+        <p class="progress-status" id="progressStatus">正在滚动加载...</p>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p class="progress-text" id="progressText">0 / 0</p>
+      </div>
+
+      <!-- 状态消息 -->
+      <div class="status-message" id="statusMessage" style="display: none;"></div>
+
+      <!-- 按钮区域 -->
+      <div class="button-group">
+        <button class="btn btn-primary" id="scanBtn">
+          🔍 扫描图片
+        </button>
+        <button class="btn btn-success" id="downloadBtn" disabled>
+          ⬇️ 下载全部
+        </button>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <a href="#" id="openOptions">⚙️ 设置</a>
+      <span class="divider">|</span>
+      <a href="#" id="openFolder">📁 打开文件夹</a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- 背景 -->
+  <rect width="128" height="128" rx="16" fill="#4285f4"/>
+  
+  <!-- 图片框架 -->
+  <rect x="20" y="24" width="88" height="64" rx="4" fill="white" stroke="#34a853" stroke-width="4"/>
+  
+  <!-- 图片内部元素 - 山 -->
+  <path d="M20 88 L44 56 L60 72 L80 48 L108 88 Z" fill="#34a853"/>
+  
+  <!-- 图片内部元素 - 太阳 -->
+  <circle cx="88" cy="44" r="12" fill="#fbbc04"/>
+  
+  <!-- 下载箭头 -->
+  <path d="M54 96 L54 108 M42 96 L54 108 L66 96" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- 装饰 - 闪光 -->
+  <line x1="16" y1="16" x2="24" y2="8" stroke="#fbbc04" stroke-width="4" stroke-linecap="round"/>
+  <line x1="112" y1="8" x2="120" y2="16" stroke="#fbbc04" stroke-width="4" stroke-linecap="round"/>
+</svg>

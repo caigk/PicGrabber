@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          for file in manifest.json; do
+            if [ -f "$file" ]; then
+              echo "Validating $file"
+              python3 -c "import json; json.load(open('$file'))"
+              echo "$file is valid"
+            fi
+          done
+
+      - name: Check JavaScript syntax
+        run: |
+          for file in background.js content.js popup.js options.js utils/helper.js; do
+            if [ -f "$file" ]; then
+              echo "Checking $file syntax..."
+              node --check "$file" && echo "$file OK" || echo "$file FAILED"
+            fi
+          done
+
+      - name: Check for required files
+        run: |
+          required_files=("manifest.json" "popup.html" "popup.js" "content.js" "background.js")
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "Missing required file: $file"
+              exit 1
+            fi
+          done
+          echo "All required files present"
+
+      - name: Check manifest configuration
+        run: |
+          echo "Manifest version: $(python3 -c "import json; print(json.load(open('manifest.json'))['manifest_version'])")"
+          echo "Extension name: $(python3 -c "import json; print(json.load(open('manifest.json'))['name'])")"

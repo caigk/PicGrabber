@@ -1,0 +1,349 @@
+/* filepath: styles/popup.css */
+
+/* 全局样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  background-color: #f5f5f5;
+  min-width: 320px;
+}
+
+.container {
+  padding: 16px;
+}
+
+/* 头部 */
+.header {
+  text-align: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a73e8;
+}
+
+/* 页面信息 */
+.page-info {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.page-title {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.image-count {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a73e8;
+}
+
+/* 设置区域 */
+.settings {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.setting-item:last-child {
+  margin-bottom: 0;
+}
+
+.setting-item span {
+  font-size: 13px;
+  color: #666;
+}
+
+.setting-item select,
+.setting-item input[type="number"] {
+  width: 140px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+}
+
+.setting-item select:focus,
+.setting-item input[type="number"]:focus {
+  border-color: #1a73e8;
+}
+
+/* 进度区域 */
+.progress-section {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.progress-status {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1a73e8, #34a853);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
+
+/* 状态消息 */
+.status-message {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.status-message.status-info {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+}
+
+.status-message.status-success {
+  background-color: #e6f4ea;
+  color: #34a853;
+}
+
+.status-message.status-warning {
+  background-color: #fef7e0;
+  color: #f9ab00;
+}
+
+.status-message.status-error {
+  background-color: #fce8e6;
+  color: #d93025;
+}
+
+/* 按钮区域 */
+.button-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #1a73e8;
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #1557b0;
+}
+
+.btn-success {
+  background-color: #34a853;
+  color: #fff;
+}
+
+.btn-success:hover:not(:disabled) {
+  background-color: #1e7e34;
+}
+
+/* 页脚 */
+.footer {
+  text-align: center;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.footer a {
+  font-size: 12px;
+  color: #1a73e8;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+
+.footer .divider {
+  margin: 0 8px;
+  color: #ccc;
+}
+
+/* 进度区域 */
+.progress-section {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1a73e8, #34a853);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
+
+/* 状态消息 */
+.status-message {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.status-message.status-info {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+}
+
+.status-message.status-success {
+  background-color: #e6f4ea;
+  color: #34a853;
+}
+
+.status-message.status-warning {
+  background-color: #fef7e0;
+  color: #f9ab00;
+}
+
+.status-message.status-error {
+  background-color: #fce8e6;
+  color: #d93025;
+}
+
+/* 按钮区域 */
+.button-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #1a73e8;
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #1557b0;
+}
+
+.btn-success {
+  background-color: #34a853;
+  color: #fff;
+}
+
+.btn-success:hover:not(:disabled) {
+  background-color: #1e7e34;
+}
+
+/* 页脚 */
+.footer {
+  text-align: center;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.footer a {
+  font-size: 12px;
+  color: #1a73e8;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+
+.footer .divider {
+  margin: 0 8px;
+  color: #ccc;
+}
