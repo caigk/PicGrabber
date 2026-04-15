@@ -1,0 +1,23 @@
+# Claude
+.claude/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Dependencies (if using npm)
+# node_modules/
+# package-lock.json
+
+# Build output
+# dist/
+# build/
