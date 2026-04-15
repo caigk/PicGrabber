@@ -1,7 +1,6 @@
 # 一键存图 (PicGrabber)
 
-[![CI](https://github.com/picgrabber/picgrabber/actions/workflows/ci.yml/badge.svg)](https://github.com/picgrabber/picgrabber/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v1.1.0-blue.svg)](https://github.com/picgrabber/picgrabber/releases)
+[![Version](https://img.shields.io/badge/version-v0.1.0-blue.svg)](https://github.com/picgrabber/picgrabber/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/picgrabber/picgrabber/blob/main/LICENSE)
 
 一个 Chrome 浏览器扩展，用于一键下载网页上的所有图片，支持懒加载和无限滚动页面。
