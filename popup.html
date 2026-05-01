@@ -3,74 +3,217 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>一键存图</title>
+  <title>一键存图 - PicGrabber</title>
   <link rel="stylesheet" href="styles/popup.css">
 </head>
 <body>
   <div class="container">
     <header class="header">
       <h1>📷 一键存图</h1>
+      <button class="btn-icon" id="toggleSettings" title="展开设置">⚙️</button>
     </header>
 
     <main class="main">
-      <!-- 页面信息 -->
       <div class="page-info" id="pageInfo">
         <p class="page-title" id="pageTitle">正在获取页面信息...</p>
         <p class="image-count" id="imageCount">-</p>
       </div>
 
-      <!-- 设置区域 -->
-      <div class="settings">
-        <label class="setting-item">
-          <span>图片格式：</span>
-          <select id="imageFormat">
-            <option value="all">全部</option>
-            <option value="jpg,jpeg,png,gif,webp">JPG/PNG/GIF/WebP</option>
-            <option value="jpg,jpeg">仅 JPG</option>
-            <option value="png">仅 PNG</option>
-            <option value="webp">仅 WebP</option>
-          </select>
-        </label>
+      <div class="settings-panel" id="settingsPanel">
+        <div class="settings-section">
+          <h3>📋 基础设置</h3>
+          <div class="form-row">
+            <label class="form-label">图片格式</label>
+            <select id="imageFormat" class="form-select">
+              <option value="all">全部格式</option>
+              <option value="jpg,jpeg,png,gif,webp">JPG/PNG/GIF/WebP</option>
+              <option value="jpg,jpeg">仅 JPG</option>
+              <option value="png">仅 PNG</option>
+              <option value="webp">仅 WebP</option>
+              <option value="gif">仅 GIF</option>
+              <option value="svg">仅 SVG</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">最大数量</label>
+            <input type="number" id="maxCount" class="form-input" value="100" min="1" max="10000">
+          </div>
+        </div>
 
-        <label class="setting-item">
-          <span>最大数量：</span>
-          <input type="number" id="maxCount" value="100" min="1" max="1000">
-        </label>
+        <div class="settings-section">
+          <h3>📏 尺寸过滤</h3>
+          <div class="form-row inline">
+            <label class="form-label">最小宽度</label>
+            <input type="number" id="minWidth" class="form-input small" value="0" min="0" placeholder="px">
+            <span class="unit">px</span>
+          </div>
+          <div class="form-row inline">
+            <label class="form-label">最小高度</label>
+            <input type="number" id="minHeight" class="form-input small" value="0" min="0" placeholder="px">
+            <span class="unit">px</span>
+          </div>
+          <div class="form-row inline">
+            <label class="form-label">最大宽度</label>
+            <input type="number" id="maxWidth" class="form-input small" value="0" min="0" placeholder="不限">
+            <span class="unit">px</span>
+          </div>
+          <div class="form-row inline">
+            <label class="form-label">最大高度</label>
+            <input type="number" id="maxHeight" class="form-input small" value="0" min="0" placeholder="不限">
+            <span class="unit">px</span>
+          </div>
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="excludeUnknownSize">
+              <span>排除尺寸未知的图片</span>
+            </label>
+          </div>
+        </div>
 
-        <label class="setting-item setting-checkbox">
-          <input type="checkbox" id="autoScroll" checked>
-          <span>自动滚动加载更多图片</span>
-        </label>
+        <div class="settings-section">
+          <h3>🔗 URL 过滤</h3>
+          <div class="form-row">
+            <label class="form-label">包含关键词</label>
+            <input type="text" id="includeKeywords" class="form-input" placeholder="多个关键词用逗号分隔">
+          </div>
+          <div class="form-row">
+            <label class="form-label">排除关键词</label>
+            <input type="text" id="excludeKeywords" class="form-input" placeholder="多个关键词用逗号分隔">
+          </div>
+          <div class="form-row">
+            <label class="form-label">包含域名</label>
+            <input type="text" id="includeDomains" class="form-input" placeholder="多个域名用逗号分隔">
+          </div>
+          <div class="form-row">
+            <label class="form-label">排除域名</label>
+            <input type="text" id="excludeDomains" class="form-input" placeholder="多个域名用逗号分隔">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>⚡ 高级选项</h3>
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="autoScroll" checked>
+              <span>自动滚动加载懒加载图片</span>
+            </label>
+          </div>
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeBackground">
+              <span>包含背景图片</span>
+            </label>
+          </div>
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeMeta">
+              <span>包含页面元数据图片（og:image等）</span>
+            </label>
+          </div>
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeDataUrl">
+              <span>包含 Data URL 图片（base64）</span>
+            </label>
+          </div>
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="includeLinks">
+              <span>包含链接指向的图片</span>
+            </label>
+          </div>
+        </div>
       </div>
 
-      <!-- 进度区域 -->
+      <div class="button-group main-actions">
+        <button class="btn btn-primary" id="scanBtn">
+          <span class="btn-icon">🔍</span>
+          <span>扫描图片</span>
+        </button>
+        <button class="btn btn-success" id="downloadBtn" disabled>
+          <span class="btn-icon">⬇️</span>
+          <span>下载全部</span>
+        </button>
+      </div>
+
+      <div class="download-controls" id="downloadControls" style="display: none;">
+        <div class="button-group">
+          <button class="btn btn-warning" id="pauseBtn">
+            <span class="btn-icon">⏸️</span>
+            <span>暂停</span>
+          </button>
+          <button class="btn btn-info" id="resumeBtn" style="display: none;">
+            <span class="btn-icon">▶️</span>
+            <span>继续</span>
+          </button>
+          <button class="btn btn-danger" id="cancelBtn">
+            <span class="btn-icon">❌</span>
+            <span>取消</span>
+          </button>
+        </div>
+      </div>
+
       <div class="progress-section" id="progressSection" style="display: none;">
-        <p class="progress-status" id="progressStatus">正在滚动加载...</p>
+        <div class="progress-header">
+          <p class="progress-status" id="progressStatus">准备中...</p>
+          <p class="progress-text" id="progressText">0 / 0</p>
+        </div>
         <div class="progress-bar">
           <div class="progress-fill" id="progressFill"></div>
         </div>
-        <p class="progress-text" id="progressText">0 / 0</p>
+        <div class="progress-details" id="progressDetails" style="display: none;">
+          <span class="detail-item">成功: <span id="detailSuccess">0</span></span>
+          <span class="detail-item">失败: <span id="detailFailed">0</span></span>
+          <span class="detail-item">等待中: <span id="detailPending">0</span></span>
+        </div>
       </div>
 
-      <!-- 状态消息 -->
       <div class="status-message" id="statusMessage" style="display: none;"></div>
 
-      <!-- 按钮区域 -->
-      <div class="button-group">
-        <button class="btn btn-primary" id="scanBtn">
-          🔍 扫描图片
-        </button>
-        <button class="btn btn-success" id="downloadBtn" disabled>
-          ⬇️ 下载全部
-        </button>
+      <div class="image-preview-section" id="imagePreviewSection" style="display: none;">
+        <div class="preview-header">
+          <h3>🖼️ 发现的图片</h3>
+          <div class="preview-actions">
+            <button class="btn-text" id="selectAllBtn">全选</button>
+            <button class="btn-text" id="deselectAllBtn">取消全选</button>
+            <span class="selected-count" id="selectedCount">已选择: 0</span>
+          </div>
+        </div>
+        <div class="image-grid" id="imageGrid">
+        </div>
+      </div>
+
+      <div class="task-list-section" id="taskListSection" style="display: none;">
+        <div class="task-header">
+          <h3>📋 下载任务</h3>
+          <button class="btn-text" id="clearCompletedBtn">清除已完成</button>
+        </div>
+        <div class="task-list" id="taskList">
+        </div>
       </div>
     </main>
 
     <footer class="footer">
-      <a href="#" id="openOptions">⚙️ 设置</a>
+      <a href="#" id="openOptions">⚙️ 高级设置</a>
       <span class="divider">|</span>
       <a href="#" id="openFolder">📁 打开文件夹</a>
     </footer>
+  </div>
+
+  <div class="image-modal" id="imageModal" style="display: none;">
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal-content">
+      <button class="modal-close" id="modalClose">×</button>
+      <img class="modal-image" id="modalImage" src="" alt="预览">
+      <div class="modal-info">
+        <p class="modal-filename" id="modalFilename"></p>
+        <p class="modal-size" id="modalSize"></p>
+        <div class="modal-actions">
+          <button class="btn btn-primary" id="downloadSingleBtn">下载此图片</button>
+          <button class="btn btn-secondary" id="openImageBtn">在新标签页打开</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="popup.js"></script>
