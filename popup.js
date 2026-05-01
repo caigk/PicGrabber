@@ -1,157 +1,289 @@
 // filepath: popup.js
 
 /**
- * Popup Script - 用户界面交互
- * 支持自动滚动加载懒加载图片
+ * Popup Script - 用户界面交互（优化版）
+ * 支持图片预览、精细化筛选、下载控制
  */
 
 'use strict';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // 获取 DOM 元素
-  const pageTitle = document.getElementById('pageTitle');
-  const imageCount = document.getElementById('imageCount');
-  const scanBtn = document.getElementById('scanBtn');
-  const downloadBtn = document.getElementById('downloadBtn');
-  const imageFormat = document.getElementById('imageFormat');
-  const maxCount = document.getElementById('maxCount');
-  const autoScroll = document.getElementById('autoScroll');
-  const progressSection = document.getElementById('progressSection');
-  const progressStatus = document.getElementById('progressStatus');
-  const progressFill = document.getElementById('progressFill');
-  const progressText = document.getElementById('progressText');
-  const statusMessage = document.getElementById('statusMessage');
-  const openOptions = document.getElementById('openOptions');
-  const openFolder = document.getElementById('openFolder');
+  // ==================== DOM 元素引用 ====================
+  
+  const elements = {
+    pageTitle: document.getElementById('pageTitle'),
+    imageCount: document.getElementById('imageCount'),
+    
+    toggleSettings: document.getElementById('toggleSettings'),
+    settingsPanel: document.getElementById('settingsPanel'),
+    
+    imageFormat: document.getElementById('imageFormat'),
+    maxCount: document.getElementById('maxCount'),
+    minWidth: document.getElementById('minWidth'),
+    minHeight: document.getElementById('minHeight'),
+    maxWidth: document.getElementById('maxWidth'),
+    maxHeight: document.getElementById('maxHeight'),
+    excludeUnknownSize: document.getElementById('excludeUnknownSize'),
+    includeKeywords: document.getElementById('includeKeywords'),
+    excludeKeywords: document.getElementById('excludeKeywords'),
+    includeDomains: document.getElementById('includeDomains'),
+    excludeDomains: document.getElementById('excludeDomains'),
+    autoScroll: document.getElementById('autoScroll'),
+    includeBackground: document.getElementById('includeBackground'),
+    includeMeta: document.getElementById('includeMeta'),
+    includeDataUrl: document.getElementById('includeDataUrl'),
+    includeLinks: document.getElementById('includeLinks'),
+    
+    scanBtn: document.getElementById('scanBtn'),
+    downloadBtn: document.getElementById('downloadBtn'),
+    
+    downloadControls: document.getElementById('downloadControls'),
+    pauseBtn: document.getElementById('pauseBtn'),
+    resumeBtn: document.getElementById('resumeBtn'),
+    cancelBtn: document.getElementById('cancelBtn'),
+    
+    progressSection: document.getElementById('progressSection'),
+    progressStatus: document.getElementById('progressStatus'),
+    progressFill: document.getElementById('progressFill'),
+    progressText: document.getElementById('progressText'),
+    progressDetails: document.getElementById('progressDetails'),
+    detailSuccess: document.getElementById('detailSuccess'),
+    detailFailed: document.getElementById('detailFailed'),
+    detailPending: document.getElementById('detailPending'),
+    
+    statusMessage: document.getElementById('statusMessage'),
+    
+    imagePreviewSection: document.getElementById('imagePreviewSection'),
+    imageGrid: document.getElementById('imageGrid'),
+    selectAllBtn: document.getElementById('selectAllBtn'),
+    deselectAllBtn: document.getElementById('deselectAllBtn'),
+    selectedCount: document.getElementById('selectedCount'),
+    
+    taskListSection: document.getElementById('taskListSection'),
+    taskList: document.getElementById('taskList'),
+    clearCompletedBtn: document.getElementById('clearCompletedBtn'),
+    
+    openOptions: document.getElementById('openOptions'),
+    openFolder: document.getElementById('openFolder'),
+    
+    imageModal: document.getElementById('imageModal'),
+    modalOverlay: document.getElementById('modalOverlay'),
+    modalClose: document.getElementById('modalClose'),
+    modalImage: document.getElementById('modalImage'),
+    modalFilename: document.getElementById('modalFilename'),
+    modalSize: document.getElementById('modalSize'),
+    downloadSingleBtn: document.getElementById('downloadSingleBtn'),
+    openImageBtn: document.getElementById('openImageBtn')
+  };
 
-  let currentImages = [];
+  // ==================== 全局状态 ====================
+  
+  let state = {
+    allImages: [],
+    filteredImages: [],
+    selectedImages: new Set(),
+    currentTabId: null,
+    isDownloading: false,
+    isPaused: false,
+    currentModalImage: null,
+    settingsExpanded: false
+  };
 
-  // 初始化
-  init();
+  // ==================== 初始化 ====================
+  
+  await init();
 
   async function init() {
     await loadSettings();
     await getPageInfo();
     setupEventListeners();
+    setupMessageListeners();
+    
+    elements.settingsPanel.style.display = 'none';
   }
 
-  /**
-   * 加载设置
-   */
+  // ==================== 设置管理 ====================
+
   async function loadSettings() {
-    const settings = await chrome.storage.sync.get({
-      imageFormat: 'all',
-      maxCount: 100,
-      autoScroll: true,
-      minWidth: 0,
-      minHeight: 0
-    });
+    try {
+      const settings = await chrome.storage.sync.get({
+        imageFormat: 'all',
+        maxCount: 100,
+        minWidth: 0,
+        minHeight: 0,
+        maxWidth: 0,
+        maxHeight: 0,
+        excludeUnknownSize: false,
+        includeKeywords: '',
+        excludeKeywords: '',
+        includeDomains: '',
+        excludeDomains: '',
+        autoScroll: true,
+        includeBackground: false,
+        includeMeta: true,
+        includeDataUrl: false,
+        includeLinks: false
+      });
 
-    imageFormat.value = settings.imageFormat;
-    maxCount.value = settings.maxCount;
-    autoScroll.checked = settings.autoScroll;
-
-    // 保存尺寸限制到全局变量供 filterImages 使用
-    window.minWidth = settings.minWidth;
-    window.minHeight = settings.minHeight;
+      elements.imageFormat.value = settings.imageFormat;
+      elements.maxCount.value = settings.maxCount;
+      elements.minWidth.value = settings.minWidth;
+      elements.minHeight.value = settings.minHeight;
+      elements.maxWidth.value = settings.maxWidth;
+      elements.maxHeight.value = settings.maxHeight;
+      elements.excludeUnknownSize.checked = settings.excludeUnknownSize;
+      elements.includeKeywords.value = settings.includeKeywords;
+      elements.excludeKeywords.value = settings.excludeKeywords;
+      elements.includeDomains.value = settings.includeDomains;
+      elements.excludeDomains.value = settings.excludeDomains;
+      elements.autoScroll.checked = settings.autoScroll;
+      elements.includeBackground.checked = settings.includeBackground;
+      elements.includeMeta.checked = settings.includeMeta;
+      elements.includeDataUrl.checked = settings.includeDataUrl;
+      elements.includeLinks.checked = settings.includeLinks;
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
   }
 
-  /**
-   * 获取页面信息
-   */
+  async function saveSettings() {
+    try {
+      const settings = {
+        imageFormat: elements.imageFormat.value,
+        maxCount: parseInt(elements.maxCount.value, 10) || 100,
+        minWidth: parseInt(elements.minWidth.value, 10) || 0,
+        minHeight: parseInt(elements.minHeight.value, 10) || 0,
+        maxWidth: parseInt(elements.maxWidth.value, 10) || 0,
+        maxHeight: parseInt(elements.maxHeight.value, 10) || 0,
+        excludeUnknownSize: elements.excludeUnknownSize.checked,
+        includeKeywords: elements.includeKeywords.value.trim(),
+        excludeKeywords: elements.excludeKeywords.value.trim(),
+        includeDomains: elements.includeDomains.value.trim(),
+        excludeDomains: elements.excludeDomains.value.trim(),
+        autoScroll: elements.autoScroll.checked,
+        includeBackground: elements.includeBackground.checked,
+        includeMeta: elements.includeMeta.checked,
+        includeDataUrl: elements.includeDataUrl.checked,
+        includeLinks: elements.includeLinks.checked
+      };
+
+      await chrome.storage.sync.set(settings);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    }
+  }
+
+  // ==================== 页面信息获取 ====================
+
   async function getPageInfo() {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
       if (!tab) {
-        pageTitle.textContent = '无法获取页面信息';
+        elements.pageTitle.textContent = '无法获取页面信息';
         return;
       }
 
-      // 发送消息给 content script
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getPageInfo' });
+      state.currentTabId = tab.id;
+
+      if (isChromeInternalPage(tab.url)) {
+        elements.pageTitle.textContent = 'Chrome 内部页面';
+        elements.imageCount.textContent = '扩展无法访问此页面';
+        showStatus('Chrome 内部页面无法被扩展访问', 'warning');
+        return;
+      }
+
+      const response = await safeSendMessage(tab.id, { action: 'getPageInfo' });
 
       if (response && response.success) {
-        const { title, imageCount: count, pageType } = response.data;
+        const { title, imageCount: count, pageType, totalImages } = response.data;
 
-        // 截断过长的标题
-        const displayTitle = title.length > 30 ? title.substring(0, 30) + '...' : title;
-        pageTitle.textContent = displayTitle;
+        const displayTitle = title.length > 40 ? title.substring(0, 40) + '...' : title;
+        elements.pageTitle.textContent = displayTitle;
 
-        // 显示页面类型提示
         let typeHint = '';
         if (pageType) {
           if (pageType.infiniteScroll) {
-            typeHint = ' (检测到无限滚动页面)';
+            typeHint = ' (无限滚动页面)';
           } else if (pageType.lazyLoad) {
             typeHint = ' (检测到懒加载)';
+          } else if (pageType.hasLoadMore) {
+            typeHint = ' (检测到加载更多)';
           }
         }
 
-        imageCount.textContent = `检测到 ${count || 0} 张图片${typeHint}`;
+        elements.imageCount.textContent = `检测到 ${count || 0} 张图片${typeHint}`;
       } else {
-        pageTitle.textContent = '请刷新页面后重试';
-        imageCount.textContent = '-';
+        elements.pageTitle.textContent = '请刷新页面后重试';
+        elements.imageCount.textContent = '-';
       }
     } catch (error) {
       console.error('Failed to get page info:', error);
-      pageTitle.textContent = '请刷新页面后重试';
-      imageCount.textContent = '-';
+      
+      const errorMessage = analyzeConnectionError(error);
+      elements.pageTitle.textContent = errorMessage.title;
+      elements.imageCount.textContent = errorMessage.subtitle;
+      showStatus(errorMessage.hint, 'warning');
     }
   }
 
-  /**
-   * 设置事件监听
-   */
-  function setupEventListeners() {
-    // 扫描按钮
-    scanBtn.addEventListener('click', scanImages);
+  function isChromeInternalPage(url) {
+    if (!url) return false;
+    const internalPatterns = [
+      'chrome://',
+      'chrome-extension://',
+      'about:',
+      'chrome-search://',
+      'chrome-devtools://'
+    ];
+    return internalPatterns.some(pattern => url.startsWith(pattern));
+  }
 
-    // 下载按钮
-    downloadBtn.addEventListener('click', downloadImages);
+  function analyzeConnectionError(error) {
+    const errorStr = error.message || String(error);
+    
+    if (errorStr.includes('Receiving end does not exist') || 
+        errorStr.includes('Could not establish connection')) {
+      return {
+        title: 'Content Script 未加载',
+        subtitle: '请刷新页面后重试',
+        hint: '页面在扩展安装/更新前已打开，请刷新页面使扩展生效'
+      };
+    }
+    
+    if (errorStr.includes('Cannot access contents of url')) {
+      return {
+        title: '无法访问此页面',
+        subtitle: '权限不足',
+        hint: '扩展无法访问 Chrome 内部页面或受保护的页面'
+      };
+    }
+    
+    return {
+      title: '连接失败',
+      subtitle: '请刷新页面后重试',
+      hint: '与页面通信失败：' + errorStr
+    };
+  }
 
-    // 打开设置
-    openOptions.addEventListener('click', (e) => {
-      e.preventDefault();
-      chrome.runtime.openOptionsPage();
-    });
-
-    // 打开文件夹
-    openFolder.addEventListener('click', (e) => {
-      e.preventDefault();
-      openDownloadFolder();
-    });
-
-    // 设置变更时保存
-    imageFormat.addEventListener('change', saveSettings);
-    maxCount.addEventListener('change', saveSettings);
-    autoScroll.addEventListener('change', saveSettings);
-
-    // 监听滚动进度消息
-    chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
-      if (message.action === 'scrollProgress') {
-        const { scrollCount, currentImageCount } = message.data;
-        progressStatus.textContent = `滚动中... 第 ${scrollCount} 次`;
-        imageCount.textContent = `已发现 ${currentImageCount} 张图片`;
+  async function safeSendMessage(tabId, message, options = {}) {
+    const maxRetries = options.maxRetries || 3;
+    const retryDelay = options.retryDelay || 500;
+    
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        return await chrome.tabs.sendMessage(tabId, message);
+      } catch (error) {
+        if (i === maxRetries - 1) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
-      return true;
-    });
+    }
   }
 
-  /**
-   * 保存设置
-   */
-  async function saveSettings() {
-    await chrome.storage.sync.set({
-      imageFormat: imageFormat.value,
-      maxCount: parseInt(maxCount.value, 10),
-      autoScroll: autoScroll.checked
-    });
-  }
+  // ==================== 图片扫描 ====================
 
-  /**
-   * 扫描图片
-   */
   async function scanImages() {
     try {
       setButtonState('scanning');
@@ -165,18 +297,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      // 检查是否需要自动滚动
-      if (autoScroll.checked) {
-        const response = await autoScrollAndScan(tab);
-        if (response && response.success) {
-          await processScanResult(response.totalImages);
-        } else {
-          showStatus('扫描失败，请刷新页面后重试', 'error');
-          setButtonState('idle');
-        }
+      state.currentTabId = tab.id;
+
+      if (elements.autoScroll.checked) {
+        await autoScrollAndScan(tab);
       } else {
-        // 直接扫描
-        const response = await chrome.tabs.sendMessage(tab.id, { action: 'scanImages' });
+        const response = await safeSendMessage(tab.id, {
+          action: 'scanImages',
+          options: {
+            includeDataUrl: elements.includeDataUrl.checked,
+            includeLinks: elements.includeLinks.checked,
+            includeMeta: elements.includeMeta.checked
+          }
+        });
 
         if (response && response.success) {
           await processScanResult(response.totalImages);
@@ -192,35 +325,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  /**
-   * 自动滚动并扫描
-   */
   async function autoScrollAndScan(tab) {
-    // 显示滚动进度
-    progressSection.style.display = 'block';
-    progressStatus.textContent = '正在滚动加载更多图片...';
-    progressFill.style.width = '0%';
-    progressText.textContent = '准备中...';
+    elements.progressSection.style.display = 'block';
+    elements.progressStatus.textContent = '正在滚动加载更多图片...';
+    elements.progressFill.style.width = '0%';
+    elements.progressText.textContent = '准备中...';
 
-    // 禁用按钮
-    scanBtn.disabled = true;
-    downloadBtn.disabled = true;
+    elements.scanBtn.disabled = true;
+    elements.downloadBtn.disabled = true;
 
     try {
-      // 发送自动滚动消息
-      const response = await chrome.tabs.sendMessage(tab.id, {
+      const response = await safeSendMessage(tab.id, {
         action: 'autoScroll',
         options: {
-          scrollDelay: 1500,
-          maxScrollCount: 50,
-          stableThreshold: 3000
+          scrollDelay: 800,
+          maxScrollCount: 100,
+          stableThreshold: 2000
         }
       });
 
       if (response && response.success) {
-        progressStatus.textContent = `滚动完成！共加载 ${response.scrollCount} 次，共 ${response.totalImages?.length || 0} 张图片`;
+        elements.progressStatus.textContent = `滚动完成！共加载 ${response.scrollCount} 次`;
         await processScanResult(response.totalImages);
-        return response;
+        return;
       } else {
         showStatus('自动滚动失败，尝试普通扫描...', 'warning');
       }
@@ -228,245 +355,774 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('Auto scroll failed:', error);
       showStatus('自动滚动失败：' + error.message, 'error');
     } finally {
-      progressSection.style.display = 'none';
+      elements.progressSection.style.display = 'none';
     }
 
-    // 回退到普通扫描
-    const fallbackResponse = await chrome.tabs.sendMessage(tab.id, { action: 'scanImages' });
+    const fallbackResponse = await safeSendMessage(tab.id, { action: 'scanImages' });
     if (fallbackResponse && fallbackResponse.success) {
-      await processScanResult(fallbackResponse.images);
+      await processScanResult(fallbackResponse.totalImages);
     }
-
-    return fallbackResponse || {};
   }
 
-  /**
-   * 处理扫描结果
-   */
   async function processScanResult(images) {
-    // 应用过滤
-    currentImages = filterImages(images);
+    state.allImages = images || [];
+    state.selectedImages.clear();
 
-    const total = images.length;
-    const filtered = currentImages.length;
+    state.filteredImages = applyFilters(state.allImages);
+
+    const total = state.allImages.length;
+    const filtered = state.filteredImages.length;
 
     if (filtered === 0 && total > 0) {
-      showStatus(`扫描完成，但没有符合条件${getFormatText()}的图片`, 'warning');
+      showStatus(`扫描完成，但没有符合条件的图片`, 'warning');
     } else if (filtered === 0) {
       showStatus('页面中没有检测到图片', 'warning');
     } else {
       showStatus(`扫描完成！找到 ${filtered} 张图片`, 'success');
     }
 
-    imageCount.textContent = `检测到 ${total} 张（${filtered} 张符合条件）`;
+    elements.imageCount.textContent = `检测到 ${total} 张（${filtered} 张符合条件）`;
 
-    // 启用下载按钮
-    downloadBtn.disabled = false;
+    state.filteredImages.forEach((_, index) => {
+      state.selectedImages.add(index);
+    });
+
+    renderImageGrid();
+    updateSelectedCount();
+
+    elements.imagePreviewSection.style.display = 'block';
+    elements.downloadBtn.disabled = state.selectedImages.size === 0;
+
+    setButtonState('idle');
   }
 
-  /**
-   * 下载图片
-   */
+  // ==================== 图片筛选 ====================
+
+  function applyFilters(images) {
+    if (!images || images.length === 0) return [];
+
+    let filtered = [...images];
+
+    const format = elements.imageFormat.value;
+    if (format !== 'all') {
+      const allowedFormats = format.split(',').map(f => f.trim().toLowerCase());
+      filtered = filtered.filter(img => {
+        const ext = getExtension(img.url);
+        return allowedFormats.includes(ext.toLowerCase());
+      });
+    }
+
+    const minW = parseInt(elements.minWidth.value, 10) || 0;
+    const minH = parseInt(elements.minHeight.value, 10) || 0;
+    const maxW = parseInt(elements.maxWidth.value, 10) || 0;
+    const maxH = parseInt(elements.maxHeight.value, 10) || 0;
+    const excludeUnknown = elements.excludeUnknownSize.checked;
+
+    if (minW > 0 || minH > 0 || maxW > 0 || maxH > 0 || excludeUnknown) {
+      filtered = filtered.filter(img => {
+        const width = img.width || 0;
+        const height = img.height || 0;
+
+        if (width === 0 && height === 0) {
+          return !excludeUnknown;
+        }
+
+        if (minW > 0 && width < minW) return false;
+        if (minH > 0 && height < minH) return false;
+        if (maxW > 0 && width > maxW) return false;
+        if (maxH > 0 && height > maxH) return false;
+
+        return true;
+      });
+    }
+
+    const includeKw = elements.includeKeywords.value.trim();
+    if (includeKw) {
+      const keywords = includeKw.split(',').map(k => k.trim().toLowerCase()).filter(k => k);
+      if (keywords.length > 0) {
+        filtered = filtered.filter(img => {
+          const url = img.url.toLowerCase();
+          return keywords.some(kw => url.includes(kw));
+        });
+      }
+    }
+
+    const excludeKw = elements.excludeKeywords.value.trim();
+    if (excludeKw) {
+      const keywords = excludeKw.split(',').map(k => k.trim().toLowerCase()).filter(k => k);
+      if (keywords.length > 0) {
+        filtered = filtered.filter(img => {
+          const url = img.url.toLowerCase();
+          return !keywords.some(kw => url.includes(kw));
+        });
+      }
+    }
+
+    const includeDomains = elements.includeDomains.value.trim();
+    if (includeDomains) {
+      const domains = includeDomains.split(',').map(d => d.trim().toLowerCase()).filter(d => d);
+      if (domains.length > 0) {
+        filtered = filtered.filter(img => {
+          try {
+            const url = new URL(img.url);
+            return domains.some(domain => url.hostname.includes(domain));
+          } catch (e) {
+            return true;
+          }
+        });
+      }
+    }
+
+    const excludeDomains = elements.excludeDomains.value.trim();
+    if (excludeDomains) {
+      const domains = excludeDomains.split(',').map(d => d.trim().toLowerCase()).filter(d => d);
+      if (domains.length > 0) {
+        filtered = filtered.filter(img => {
+          try {
+            const url = new URL(img.url);
+            return !domains.some(domain => url.hostname.includes(domain));
+          } catch (e) {
+            return true;
+          }
+        });
+      }
+    }
+
+    const maxCount = parseInt(elements.maxCount.value, 10) || 100;
+    return filtered.slice(0, maxCount);
+  }
+
+  // ==================== 图片预览网格 ====================
+
+  function renderImageGrid() {
+    elements.imageGrid.innerHTML = '';
+
+    state.filteredImages.forEach((img, index) => {
+      const item = createImageItem(img, index);
+      elements.imageGrid.appendChild(item);
+    });
+  }
+
+  function createImageItem(img, index) {
+    const div = document.createElement('div');
+    div.className = 'image-item' + (state.selectedImages.has(index) ? ' selected' : '');
+    div.dataset.index = index;
+
+    const thumbnail = document.createElement('div');
+    thumbnail.className = 'image-thumbnail';
+    
+    const imgEl = document.createElement('img');
+    imgEl.src = img.url;
+    imgEl.alt = `图片 ${index + 1}`;
+    imgEl.loading = 'lazy';
+    
+    imgEl.onerror = function() {
+      this.style.display = 'none';
+      thumbnail.classList.add('no-preview');
+      thumbnail.innerHTML = `
+        <div class="no-preview-icon">🖼️</div>
+        <div class="no-preview-text">无法预览</div>
+      `;
+    };
+
+    thumbnail.appendChild(imgEl);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'image-overlay';
+    
+    const checkbox = document.createElement('div');
+    checkbox.className = 'image-checkbox' + (state.selectedImages.has(index) ? ' checked' : '');
+    checkbox.innerHTML = state.selectedImages.has(index) ? '✓' : '';
+
+    const info = document.createElement('div');
+    info.className = 'image-info';
+    
+    const size = document.createElement('span');
+    size.className = 'image-size';
+    if (img.width > 0 && img.height > 0) {
+      size.textContent = `${img.width} × ${img.height}`;
+    } else {
+      size.textContent = '尺寸未知';
+    }
+    
+    const ext = document.createElement('span');
+    ext.className = 'image-ext';
+    ext.textContent = (img.extension || getExtension(img.url)).toUpperCase();
+
+    info.appendChild(ext);
+    info.appendChild(size);
+    overlay.appendChild(checkbox);
+    overlay.appendChild(info);
+
+    div.appendChild(thumbnail);
+    div.appendChild(overlay);
+
+    checkbox.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleImageSelection(index);
+    });
+
+    div.addEventListener('click', (e) => {
+      if (e.target === checkbox || checkbox.contains(e.target)) return;
+      openImageModal(img, index);
+    });
+
+    div.addEventListener('dblclick', (e) => {
+      toggleImageSelection(index);
+    });
+
+    return div;
+  }
+
+  function toggleImageSelection(index) {
+    if (state.selectedImages.has(index)) {
+      state.selectedImages.delete(index);
+    } else {
+      state.selectedImages.add(index);
+    }
+    
+    updateSelectedCount();
+    updateImageItemSelection(index);
+    elements.downloadBtn.disabled = state.selectedImages.size === 0;
+  }
+
+  function updateImageItemSelection(index) {
+    const item = elements.imageGrid.querySelector(`[data-index="${index}"]`);
+    if (item) {
+      const checkbox = item.querySelector('.image-checkbox');
+      if (state.selectedImages.has(index)) {
+        item.classList.add('selected');
+        checkbox.classList.add('checked');
+        checkbox.innerHTML = '✓';
+      } else {
+        item.classList.remove('selected');
+        checkbox.classList.remove('checked');
+        checkbox.innerHTML = '';
+      }
+    }
+  }
+
+  function updateSelectedCount() {
+    elements.selectedCount.textContent = `已选择: ${state.selectedImages.size}`;
+  }
+
+  function selectAll() {
+    state.filteredImages.forEach((_, index) => {
+      state.selectedImages.add(index);
+    });
+    updateSelectedCount();
+    renderImageGrid();
+    elements.downloadBtn.disabled = false;
+  }
+
+  function deselectAll() {
+    state.selectedImages.clear();
+    updateSelectedCount();
+    renderImageGrid();
+    elements.downloadBtn.disabled = true;
+  }
+
+  // ==================== 图片模态框 ====================
+
+  function openImageModal(img, index) {
+    state.currentModalImage = { img, index };
+    
+    elements.modalImage.src = img.url;
+    elements.modalFilename.textContent = getFilenameFromUrl(img.url);
+    
+    if (img.width > 0 && img.height > 0) {
+      elements.modalSize.textContent = `${img.width} × ${img.height} px`;
+    } else {
+      elements.modalSize.textContent = '尺寸未知';
+    }
+    
+    elements.imageModal.style.display = 'flex';
+  }
+
+  function closeImageModal() {
+    elements.imageModal.style.display = 'none';
+    state.currentModalImage = null;
+  }
+
+  function getFilenameFromUrl(url) {
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      const parts = pathname.split('/');
+      return parts[parts.length - 1] || 'image';
+    } catch (e) {
+      return 'image';
+    }
+  }
+
+  // ==================== 下载功能 ====================
+
   async function downloadImages() {
-    if (currentImages.length === 0) {
-      showStatus('没有可下载的图片', 'warning');
+    if (state.selectedImages.size === 0) {
+      showStatus('没有选择要下载的图片', 'warning');
       return;
     }
 
     try {
-      setButtonState('downloading');
+      const selectedIndices = Array.from(state.selectedImages).sort((a, b) => a - b);
+      const imagesToDownload = selectedIndices.map(i => state.filteredImages[i]);
 
-      // 获取当前标签页
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-      // 发送消息给 background script
+      state.isDownloading = true;
+      setButtonState('downloading');
+
       const response = await chrome.runtime.sendMessage({
         action: 'startDownload',
         data: {
-          images: currentImages,
-          tabId: tab?.id
+          images: imagesToDownload,
+          tabId: tab?.id,
+          options: {
+            metadata: {
+              title: document.title
+            }
+          }
         }
       });
 
       if (response && response.success) {
         showStatus(`已开始下载 ${response.data.queued} 张图片`, 'success');
 
-        // 显示进度
-        progressSection.style.display = 'block';
-        progressStatus.textContent = '正在下载...';
+        elements.progressSection.style.display = 'block';
+        elements.progressDetails.style.display = 'block';
+        elements.downloadControls.style.display = 'block';
+        elements.taskListSection.style.display = 'block';
+        
         updateProgress(0, response.data.queued);
-
-        // 监听下载进度
-        listenDownloadProgress(response.data.queued);
+        updateDownloadControls(false);
       } else {
-        showStatus('下载失败：' + (response.error || '未知错误'), 'error');
+        showStatus('下载失败：' + (response?.error || '未知错误'), 'error');
+        setButtonState('idle');
       }
     } catch (error) {
       console.error('Download failed:', error);
       showStatus('下载失败：' + error.message, 'error');
-    } finally {
       setButtonState('idle');
     }
   }
 
-  /**
-   * 监听下载进度
-   */
-  function listenDownloadProgress(total) {
-    let completed = 0;
-
-    const listener = (message) => {
-      if (message.action === 'downloadComplete') {
-        completed = message.data.completed;
-        updateProgress(completed, total);
-
-        if (completed + message.data.failed >= total) {
-          const failed = message.data.failed;
-          if (failed > 0) {
-            showStatus(`下载完成！成功 ${completed} 张，失败 ${failed} 张`, failed > 0 ? 'warning' : 'success');
-          } else {
-            showStatus(`下载完成！共 ${completed} 张图片`, 'success');
-          }
-
-          // 移除监听器
-          chrome.runtime.onMessage.removeListener(listener);
-        }
-      }
-    };
-
-    chrome.runtime.onMessage.addListener(listener);
+  async function pauseDownloads() {
+    try {
+      await chrome.runtime.sendMessage({ action: 'pauseDownloads' });
+      state.isPaused = true;
+      updateDownloadControls(true);
+      showStatus('下载已暂停', 'info');
+    } catch (error) {
+      console.error('Pause failed:', error);
+      showStatus('暂停失败：' + error.message, 'error');
+    }
   }
 
-  /**
-   * 打开下载文件夹
-   */
+  async function resumeDownloads() {
+    try {
+      await chrome.runtime.sendMessage({ action: 'resumeDownloads' });
+      state.isPaused = false;
+      updateDownloadControls(false);
+      showStatus('下载已继续', 'info');
+    } catch (error) {
+      console.error('Resume failed:', error);
+      showStatus('继续失败：' + error.message, 'error');
+    }
+  }
+
+  async function cancelDownloads() {
+    try {
+      await chrome.runtime.sendMessage({ action: 'cancelDownloads' });
+      state.isDownloading = false;
+      state.isPaused = false;
+      
+      elements.downloadControls.style.display = 'none';
+      elements.progressSection.style.display = 'none';
+      setButtonState('idle');
+      showStatus('下载已取消', 'info');
+    } catch (error) {
+      console.error('Cancel failed:', error);
+      showStatus('取消失败：' + error.message, 'error');
+    }
+  }
+
+  function updateDownloadControls(isPaused) {
+    if (isPaused) {
+      elements.pauseBtn.style.display = 'none';
+      elements.resumeBtn.style.display = 'inline-flex';
+    } else {
+      elements.pauseBtn.style.display = 'inline-flex';
+      elements.resumeBtn.style.display = 'none';
+    }
+  }
+
+  // ==================== 消息监听 ====================
+
+  function setupMessageListeners() {
+    chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+      switch (message.action) {
+        case 'scrollProgress':
+          handleScrollProgress(message.data);
+          break;
+        case 'downloadTaskUpdate':
+          handleTaskUpdate(message.data);
+          break;
+        case 'downloadTaskComplete':
+          handleTaskComplete(message.data);
+          break;
+        case 'downloadTaskFailed':
+          handleTaskFailed(message.data);
+          break;
+        case 'downloadBatchComplete':
+          handleBatchComplete(message.data);
+          break;
+        case 'downloadPaused':
+          state.isPaused = true;
+          updateDownloadControls(true);
+          break;
+        case 'downloadResumed':
+          state.isPaused = false;
+          updateDownloadControls(false);
+          break;
+      }
+      return true;
+    });
+  }
+
+  function handleScrollProgress(data) {
+    const { scrollCount, currentImageCount } = data;
+    elements.progressStatus.textContent = `滚动中... 第 ${scrollCount} 次`;
+    elements.imageCount.textContent = `已发现 ${currentImageCount} 张图片`;
+  }
+
+  function handleTaskUpdate(task) {
+    renderTaskList();
+    
+    const stats = getCurrentStats();
+    updateProgress(stats.completed + stats.failed, stats.total);
+    updateProgressDetails(stats);
+  }
+
+  function handleTaskComplete(task) {
+    renderTaskList();
+    
+    const stats = getCurrentStats();
+    updateProgress(stats.completed + stats.failed, stats.total);
+    updateProgressDetails(stats);
+  }
+
+  function handleTaskFailed(task) {
+    renderTaskList();
+    
+    const stats = getCurrentStats();
+    updateProgress(stats.completed + stats.failed, stats.total);
+    updateProgressDetails(stats);
+  }
+
+  function handleBatchComplete(stats) {
+    state.isDownloading = false;
+    elements.downloadControls.style.display = 'none';
+    
+    const completed = stats.completed;
+    const failed = stats.failed;
+    
+    if (failed > 0) {
+      showStatus(`下载完成！成功 ${completed} 张，失败 ${failed} 张`, 'warning');
+    } else {
+      showStatus(`下载完成！共 ${completed} 张图片`, 'success');
+    }
+  }
+
+  async function getCurrentStats() {
+    try {
+      const response = await chrome.runtime.sendMessage({ action: 'getDownloadStatus' });
+      if (response && response.success) {
+        return response.data;
+      }
+    } catch (e) {
+      console.error('Failed to get stats:', e);
+    }
+    return { total: 0, completed: 0, failed: 0, pending: 0 };
+  }
+
+  async function renderTaskList() {
+    try {
+      const response = await chrome.runtime.sendMessage({ action: 'getAllTasks' });
+      if (response && response.success) {
+        const tasks = response.data;
+        
+        elements.taskList.innerHTML = '';
+        
+        tasks.forEach(task => {
+          const item = createTaskItem(task);
+          elements.taskList.appendChild(item);
+        });
+      }
+    } catch (e) {
+      console.error('Failed to render task list:', e);
+    }
+  }
+
+  function createTaskItem(task) {
+    const div = document.createElement('div');
+    div.className = 'task-item';
+    
+    const statusClass = getStatusClass(task.status);
+    const statusText = getStatusText(task.status);
+    
+    div.innerHTML = `
+      <div class="task-info">
+        <span class="task-filename">${task.filename}</span>
+        <span class="task-status ${statusClass}">${statusText}</span>
+      </div>
+      <div class="task-progress">
+        <div class="task-progress-bar">
+          <div class="task-progress-fill" style="width: ${task.progress}%"></div>
+        </div>
+        <span class="task-progress-text">${task.progress}%</span>
+      </div>
+      ${task.error ? `<div class="task-error">${task.error}</div>` : ''}
+      <div class="task-actions">
+        ${task.status === 'failed' ? `<button class="btn-text task-retry" data-id="${task.id}">重试</button>` : ''}
+        ${task.status === 'pending' || task.status === 'downloading' || task.status === 'paused' 
+          ? `<button class="btn-text task-cancel" data-id="${task.id}">取消</button>` : ''}
+      </div>
+    `;
+    
+    const retryBtn = div.querySelector('.task-retry');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', async () => {
+        await chrome.runtime.sendMessage({ 
+          action: 'retryTask', 
+          taskId: task.id 
+        });
+      });
+    }
+    
+    const cancelBtn = div.querySelector('.task-cancel');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', async () => {
+        await chrome.runtime.sendMessage({ 
+          action: 'cancelTask', 
+          taskId: task.id 
+        });
+      });
+    }
+    
+    return div;
+  }
+
+  function getStatusClass(status) {
+    const map = {
+      'pending': 'status-pending',
+      'downloading': 'status-downloading',
+      'paused': 'status-paused',
+      'completed': 'status-completed',
+      'failed': 'status-failed',
+      'cancelled': 'status-cancelled'
+    };
+    return map[status] || '';
+  }
+
+  function getStatusText(status) {
+    const map = {
+      'pending': '等待中',
+      'downloading': '下载中',
+      'paused': '已暂停',
+      'completed': '已完成',
+      'failed': '失败',
+      'cancelled': '已取消'
+    };
+    return map[status] || status;
+  }
+
+  // ==================== UI 辅助函数 ====================
+
+  function updateProgress(completed, total) {
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    elements.progressFill.style.width = percent + '%';
+    elements.progressText.textContent = `${completed} / ${total}`;
+  }
+
+  function updateProgressDetails(stats) {
+    elements.detailSuccess.textContent = stats.completed || 0;
+    elements.detailFailed.textContent = stats.failed || 0;
+    elements.detailPending.textContent = stats.pending || 0;
+  }
+
+  function showStatus(message, type = 'info') {
+    elements.statusMessage.textContent = message;
+    elements.statusMessage.className = 'status-message status-' + type;
+    elements.statusMessage.style.display = 'block';
+
+    setTimeout(() => {
+      elements.statusMessage.style.display = 'none';
+    }, 4000);
+  }
+
+  function setButtonState(state) {
+    switch (state) {
+      case 'scanning':
+        elements.scanBtn.disabled = true;
+        elements.scanBtn.innerHTML = '<span class="btn-icon">⏳</span><span>扫描中...</span>';
+        elements.downloadBtn.disabled = true;
+        break;
+      case 'downloading':
+        elements.scanBtn.disabled = true;
+        elements.downloadBtn.disabled = true;
+        elements.downloadBtn.innerHTML = '<span class="btn-icon">⏳</span><span>下载中...</span>';
+        break;
+      case 'idle':
+      default:
+        elements.scanBtn.disabled = false;
+        elements.scanBtn.innerHTML = '<span class="btn-icon">🔍</span><span>扫描图片</span>';
+        elements.downloadBtn.disabled = state.selectedImages?.size === 0;
+        elements.downloadBtn.innerHTML = '<span class="btn-icon">⬇️</span><span>下载选中</span>';
+        break;
+    }
+  }
+
+  // ==================== 工具函数 ====================
+
+  function getExtension(url) {
+    if (!url) return 'jpg';
+    
+    if (url.startsWith('data:image/')) {
+      const match = url.match(/^data:image\/([a-zA-Z0-9]+);/);
+      if (match) return match[1].toLowerCase();
+      return 'jpg';
+    }
+    
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname.toLowerCase();
+      
+      const extMatch = pathname.match(/\.([a-z0-9]+)(?:\?|$)/);
+      if (extMatch) return extMatch[1];
+      
+      const queryMatch = urlObj.search.match(/format=([a-z0-9]+)/i);
+      if (queryMatch) return queryMatch[1].toLowerCase();
+      
+      return 'jpg';
+    } catch (e) {
+      return 'jpg';
+    }
+  }
+
+  function toggleSettingsPanel() {
+    state.settingsExpanded = !state.settingsExpanded;
+    
+    if (state.settingsExpanded) {
+      elements.settingsPanel.style.display = 'block';
+      elements.toggleSettings.textContent = '▼';
+      elements.toggleSettings.title = '收起设置';
+    } else {
+      elements.settingsPanel.style.display = 'none';
+      elements.toggleSettings.textContent = '⚙️';
+      elements.toggleSettings.title = '展开设置';
+    }
+  }
+
+  // ==================== 事件监听 ====================
+
+  function setupEventListeners() {
+    elements.scanBtn.addEventListener('click', scanImages);
+    elements.downloadBtn.addEventListener('click', downloadImages);
+    
+    elements.pauseBtn.addEventListener('click', pauseDownloads);
+    elements.resumeBtn.addEventListener('click', resumeDownloads);
+    elements.cancelBtn.addEventListener('click', cancelDownloads);
+    
+    elements.selectAllBtn.addEventListener('click', selectAll);
+    elements.deselectAllBtn.addEventListener('click', deselectAll);
+    
+    elements.clearCompletedBtn.addEventListener('click', async () => {
+      await chrome.runtime.sendMessage({ action: 'clearCompleted' });
+      renderTaskList();
+    });
+    
+    elements.toggleSettings.addEventListener('click', toggleSettingsPanel);
+    
+    elements.openOptions.addEventListener('click', (e) => {
+      e.preventDefault();
+      chrome.runtime.openOptionsPage();
+    });
+    
+    elements.openFolder.addEventListener('click', (e) => {
+      e.preventDefault();
+      openDownloadFolder();
+    });
+    
+    elements.modalClose.addEventListener('click', closeImageModal);
+    elements.modalOverlay.addEventListener('click', closeImageModal);
+    
+    elements.downloadSingleBtn.addEventListener('click', async () => {
+      if (state.currentModalImage) {
+        const { img, index } = state.currentModalImage;
+        
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        
+        await chrome.runtime.sendMessage({
+          action: 'startDownload',
+          data: {
+            images: [img],
+            tabId: tab?.id
+          }
+        });
+        
+        showStatus('已添加到下载队列', 'success');
+        closeImageModal();
+      }
+    });
+    
+    elements.openImageBtn.addEventListener('click', () => {
+      if (state.currentModalImage) {
+        chrome.tabs.create({ url: state.currentModalImage.img.url });
+        closeImageModal();
+      }
+    });
+    
+    const filterInputs = [
+      elements.imageFormat, elements.maxCount,
+      elements.minWidth, elements.minHeight,
+      elements.maxWidth, elements.maxHeight,
+      elements.excludeUnknownSize,
+      elements.includeKeywords, elements.excludeKeywords,
+      elements.includeDomains, elements.excludeDomains,
+      elements.autoScroll,
+      elements.includeBackground, elements.includeMeta,
+      elements.includeDataUrl, elements.includeLinks
+    ];
+    
+    filterInputs.forEach(input => {
+      const eventType = input.type === 'checkbox' ? 'change' : 'input';
+      input.addEventListener(eventType, () => {
+        saveSettings();
+        
+        if (state.allImages.length > 0) {
+          state.filteredImages = applyFilters(state.allImages);
+          state.selectedImages.clear();
+          state.filteredImages.forEach((_, index) => {
+            state.selectedImages.add(index);
+          });
+          renderImageGrid();
+          updateSelectedCount();
+          
+          const total = state.allImages.length;
+          const filtered = state.filteredImages.length;
+          elements.imageCount.textContent = `检测到 ${total} 张（${filtered} 张符合条件）`;
+          elements.downloadBtn.disabled = state.selectedImages.size === 0;
+        }
+      });
+    });
+  }
+
   async function openDownloadFolder() {
     try {
       await chrome.runtime.sendMessage({ action: 'openDownloadFolder' });
     } catch (error) {
       console.error('Failed to open folder:', error);
-      // 如果无法通过扩展打开，直接打开下载页面
       await chrome.tabs.create({ url: 'chrome://downloads/' });
-    }
-  }
-
-  /**
-   * 过滤图片
-   */
-  function filterImages(images) {
-    const format = imageFormat.value;
-    const max = parseInt(maxCount.value, 10);
-    const minWidth = parseInt(window.minWidth, 10) || 0;
-    const minHeight = parseInt(window.minHeight, 10) || 0;
-
-    // 转换为统一格式（兼容字符串 URL 和对象格式）
-    const normalizedImages = images.map(img => {
-      if (typeof img === 'string') {
-        return { url: img, width: 0, height: 0 };
-      }
-      return img;
-    });
-
-    let filtered = normalizedImages;
-
-    // 按格式过滤
-    if (format !== 'all') {
-      const allowedFormats = format.split(',');
-      filtered = filtered.filter(img => {
-        const extension = getExtension(img.url);
-        return allowedFormats.includes(extension.toLowerCase());
-      });
-    }
-
-    // 按尺寸过滤
-    if (minWidth > 0 || minHeight > 0) {
-      filtered = filtered.filter(img => {
-        // 宽高都为 0 表示无法获取尺寸（背景图片等），保留
-        if (img.width === 0 && img.height === 0) {
-          return true;
-        }
-        // 至少有一个维度满足要求就保留
-        const widthOk = minWidth === 0 || img.width >= minWidth;
-        const heightOk = minHeight === 0 || img.height >= minHeight;
-        return widthOk && heightOk;
-      });
-    }
-
-    // 限制数量
-    return filtered.slice(0, max).map(img => img.url);
-  }
-
-  /**
-   * 获取扩展名
-   */
-  function getExtension(url) {
-    try {
-      const urlObj = new URL(url);
-      const pathname = urlObj.pathname;
-      const match = pathname.match(/\.([a-zA-Z0-9]+)(?:\?|$)/);
-      if (match) {
-        return match[1].toLowerCase();
-      }
-      return 'jpg';
-    } catch (error) {
-      return 'jpg';
-    }
-  }
-
-  /**
-   * 获取格式文本
-   */
-  function getFormatText() {
-    const format = imageFormat.value;
-    if (format === 'all') return '';
-    return format.replace(/,/g, '/');
-  }
-
-  /**
-   * 更新进度
-   */
-  function updateProgress(completed, total) {
-    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-    progressFill.style.width = percent + '%';
-    progressText.textContent = `${completed} / ${total}`;
-  }
-
-  /**
-   * 显示状态消息
-   */
-  function showStatus(message, type = 'info') {
-    statusMessage.textContent = message;
-    statusMessage.className = 'status-message status-' + type;
-    statusMessage.style.display = 'block';
-
-    // 3 秒后隐藏
-    setTimeout(() => {
-      statusMessage.style.display = 'none';
-    }, 3000);
-  }
-
-  /**
-   * 设置按钮状态
-   */
-  function setButtonState(state) {
-    switch (state) {
-      case 'scanning':
-        scanBtn.disabled = true;
-        scanBtn.textContent = '扫描中...';
-        downloadBtn.disabled = true;
-        break;
-      case 'downloading':
-        scanBtn.disabled = true;
-        downloadBtn.disabled = true;
-        downloadBtn.textContent = '下载中...';
-        break;
-      case 'idle':
-      default:
-        scanBtn.disabled = false;
-        scanBtn.textContent = '扫描图片';
-        downloadBtn.disabled = currentImages.length === 0;
-        downloadBtn.textContent = '下载全部';
-        break;
     }
   }
 });

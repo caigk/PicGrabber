@@ -3,138 +3,535 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>一键存图 - 设置</title>
+  <title>PicGrabber - 扩展设置</title>
   <link rel="stylesheet" href="styles/options.css">
 </head>
 <body>
   <div class="container">
     <header class="header">
-      <h1>⚙️ 一键存图设置</h1>
+      <div class="header-left">
+        <div class="logo">
+          <span class="logo-icon">🖼️</span>
+        </div>
+        <div class="header-text">
+          <h1>PicGrabber</h1>
+          <p class="subtitle">图片批量下载器 - 扩展设置</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-link" id="openPopupBtn">
+          <span class="btn-icon">📋</span>
+          <span>打开主面板</span>
+        </button>
+      </div>
     </header>
+
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="download">📥 下载设置</button>
+      <button class="nav-tab" data-tab="filter">🔍 图片过滤</button>
+      <button class="nav-tab" data-tab="scan">🔄 扫描规则</button>
+      <button class="nav-tab" data-tab="advanced">⚙️ 高级设置</button>
+    </nav>
 
     <main class="main">
       <!-- 下载设置 -->
-      <section class="section">
-        <h2>📥 下载设置</h2>
+      <section class="tab-content active" id="tab-download">
+        <div class="section-header">
+          <h2>📥 下载设置</h2>
+          <p class="section-desc">配置下载路径、文件名格式和并发策略</p>
+        </div>
         
-        <div class="form-group">
-          <label for="downloadPath">
-            下载目录
-            <span class="hint">（Chrome 下载目录下的子目录）</span>
-          </label>
-          <input type="text" id="downloadPath" placeholder="Downloaded_Images" value="Downloaded_Images">
+        <div class="form-card">
+          <h3 class="card-title">基本设置</h3>
+          
+          <div class="form-group">
+            <label for="downloadPath">
+              下载目录
+              <span class="hint">Chrome 下载目录下的子文件夹名称</span>
+            </label>
+            <div class="input-with-icon">
+              <span class="input-icon">📁</span>
+              <input type="text" id="downloadPath" placeholder="Downloaded_Images">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="fileNamePattern">
+              文件名格式
+              <span class="hint">可用变量：{date} {time} {index} {filename} {title} {timestamp}</span>
+            </label>
+            <div class="input-with-icon">
+              <span class="input-icon">📝</span>
+              <input type="text" id="fileNamePattern" placeholder="image_{date}_{time}_{index}">
+            </div>
+            <div class="pattern-preview">
+              <span class="preview-label">预览：</span>
+              <code id="patternPreview">image_20250101_123456_001.jpg</code>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="maxConcurrent">
+                最大并发下载
+                <span class="hint">同时下载的图片数量</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">⚡</span>
+                <input type="number" id="maxConcurrent" min="1" max="20">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="maxCount">
+                默认最大数量
+                <span class="hint">单次扫描的图片上限</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">🔢</span>
+                <input type="number" id="maxCount" min="1" max="1000">
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="fileNamePattern">
-            文件名格式
-            <span class="hint">可用变量：{date} {time} {index} {filename}</span>
-          </label>
-          <input type="text" id="fileNamePattern" placeholder="image_{date}_{time}_{index}" value="image_{date}_{time}_{index}">
-        </div>
+        <div class="form-card">
+          <h3 class="card-title">下载策略</h3>
+          
+          <div class="checkbox-list">
+            <label class="checkbox-item">
+              <input type="checkbox" id="showNotifications">
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-label">
+                <span class="label-text">下载完成通知</span>
+                <span class="label-hint">批量下载完成后显示浏览器通知</span>
+              </span>
+            </label>
+            
+            <label class="checkbox-item">
+              <input type="checkbox" id="autoRename">
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-label">
+                <span class="label-text">自动重命名重复文件</span>
+                <span class="label-hint">文件名冲突时自动添加序号</span>
+              </span>
+            </label>
 
-        <div class="form-group">
-          <label for="maxConcurrent">
-            最大并发下载数
-            <span class="hint">同时下载的图片数量</span>
-          </label>
-          <input type="number" id="maxConcurrent" min="1" max="10" value="3">
+            <label class="checkbox-item">
+              <input type="checkbox" id="autoStartDownload">
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-label">
+                <span class="label-text">扫描后自动下载</span>
+                <span class="label-hint">扫描完成后自动开始下载符合条件的图片</span>
+              </span>
+            </label>
+          </div>
         </div>
       </section>
 
       <!-- 图片过滤 -->
-      <section class="section">
-        <h2>🖼️ 图片过滤</h2>
-        
-        <div class="form-group">
-          <label>
-            默认图片格式
-          </label>
-          <div class="checkbox-group">
-            <label class="checkbox-item">
+      <section class="tab-content" id="tab-filter">
+        <div class="section-header">
+          <h2>🔍 图片过滤</h2>
+          <p class="section-desc">配置默认的图片筛选规则</p>
+        </div>
+
+        <div class="form-card">
+          <h3 class="card-title">图片格式</h3>
+          <div class="format-grid">
+            <label class="format-item">
               <input type="checkbox" name="formats" value="jpg" checked>
-              <span>JPG</span>
+              <span class="format-icon">🖼️</span>
+              <span class="format-name">JPG</span>
             </label>
-            <label class="checkbox-item">
+            <label class="format-item">
               <input type="checkbox" name="formats" value="jpeg" checked>
-              <span>JPEG</span>
+              <span class="format-icon">🖼️</span>
+              <span class="format-name">JPEG</span>
             </label>
-            <label class="checkbox-item">
+            <label class="format-item">
               <input type="checkbox" name="formats" value="png" checked>
-              <span>PNG</span>
+              <span class="format-icon">🖼️</span>
+              <span class="format-name">PNG</span>
             </label>
-            <label class="checkbox-item">
+            <label class="format-item">
               <input type="checkbox" name="formats" value="gif" checked>
-              <span>GIF</span>
+              <span class="format-icon">🖼️</span>
+              <span class="format-name">GIF</span>
             </label>
-            <label class="checkbox-item">
+            <label class="format-item">
               <input type="checkbox" name="formats" value="webp" checked>
-              <span>WebP</span>
+              <span class="format-icon">🖼️</span>
+              <span class="format-name">WebP</span>
             </label>
-            <label class="checkbox-item">
+            <label class="format-item">
               <input type="checkbox" name="formats" value="svg">
-              <span>SVG</span>
+              <span class="format-icon">📐</span>
+              <span class="format-name">SVG</span>
             </label>
-            <label class="checkbox-item">
+            <label class="format-item">
               <input type="checkbox" name="formats" value="bmp">
-              <span>BMP</span>
+              <span class="format-icon">🖼️</span>
+              <span class="format-name">BMP</span>
+            </label>
+            <label class="format-item">
+              <input type="checkbox" name="formats" value="ico">
+              <span class="format-icon">🔗</span>
+              <span class="format-name">ICO</span>
             </label>
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="minWidth">
-            最小图片宽度
-            <span class="hint">（像素）设为 0 不过滤</span>
+        <div class="form-card">
+          <h3 class="card-title">尺寸过滤</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="minWidth">
+                最小宽度
+                <span class="hint">像素，0 表示不限制</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">↔️</span>
+                <input type="number" id="minWidth" min="0" placeholder="0">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="minHeight">
+                最小高度
+                <span class="hint">像素，0 表示不限制</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">↕️</span>
+                <input type="number" id="minHeight" min="0" placeholder="0">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="maxWidth">
+                最大宽度
+                <span class="hint">像素，0 表示不限制</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">↔️</span>
+                <input type="number" id="maxWidth" min="0" placeholder="0">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="maxHeight">
+                最大高度
+                <span class="hint">像素，0 表示不限制</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">↕️</span>
+                <input type="number" id="maxHeight" min="0" placeholder="0">
+              </div>
+            </div>
+          </div>
+
+          <label class="checkbox-item">
+            <input type="checkbox" id="excludeUnknownSize">
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-label">
+              <span class="label-text">排除尺寸未知的图片</span>
+              <span class="label-hint">无法确定尺寸的图片将被过滤掉</span>
+            </span>
           </label>
-          <input type="number" id="minWidth" min="0" value="0">
         </div>
 
-        <div class="form-group">
-          <label for="minHeight">
-            最小图片高度
-            <span class="hint">（像素）设为 0 不过滤</span>
+        <div class="form-card">
+          <h3 class="card-title">关键词过滤</h3>
+          
+          <div class="form-group">
+            <label for="includeKeywords">
+              包含关键词
+              <span class="hint">只下载 URL 包含这些关键词的图片（逗号分隔）</span>
+            </label>
+            <div class="input-with-icon">
+              <span class="input-icon">✅</span>
+              <input type="text" id="includeKeywords" placeholder="例如: large,high-res,quality">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="excludeKeywords">
+              排除关键词
+              <span class="hint">不下载 URL 包含这些关键词的图片（逗号分隔）</span>
+            </label>
+            <div class="input-with-icon">
+              <span class="input-icon">❌</span>
+              <input type="text" id="excludeKeywords" placeholder="例如: thumbnail,small,icon">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <h3 class="card-title">域名过滤</h3>
+          
+          <div class="form-group">
+            <label for="includeDomains">
+              包含域名
+              <span class="hint">只下载来自这些域名的图片（逗号分隔）</span>
+            </label>
+            <div class="input-with-icon">
+              <span class="input-icon">🌐</span>
+              <input type="text" id="includeDomains" placeholder="例如: cdn.example.com,images.example.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="excludeDomains">
+              排除域名
+              <span class="hint">不下载来自这些域名的图片（逗号分隔）</span>
+            </label>
+            <div class="input-with-icon">
+              <span class="input-icon">🚫</span>
+              <input type="text" id="excludeDomains" placeholder="例如: ads.example.com,tracking.example.com">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 扫描规则 -->
+      <section class="tab-content" id="tab-scan">
+        <div class="section-header">
+          <h2>🔄 扫描规则</h2>
+          <p class="section-desc">配置图片扫描和自动滚动行为</p>
+        </div>
+
+        <div class="form-card">
+          <h3 class="card-title">自动滚动设置</h3>
+          
+          <label class="checkbox-item">
+            <input type="checkbox" id="autoScroll">
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-label">
+              <span class="label-text">自动滚动页面</span>
+              <span class="label-hint">扫描时自动滚动以加载懒加载图片</span>
+            </span>
           </label>
-          <input type="number" id="minHeight" min="0" value="0">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="scrollDelay">
+                滚动间隔
+                <span class="hint">每次滚动后等待的毫秒数</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">⏱️</span>
+                <input type="number" id="scrollDelay" min="100" max="5000">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="maxScrollCount">
+                最大滚动次数
+                <span class="hint">限制滚动次数以防无限循环</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">🔄</span>
+                <input type="number" id="maxScrollCount" min="1" max="500">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="stableThreshold">
+              稳定检测阈值
+              <span class="hint">连续多少毫秒没有新图片则停止滚动</span>
+            </label>
+            <div class="input-with-icon">
+              <span class="input-icon">📊</span>
+              <input type="number" id="stableThreshold" min="500" max="10000">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <h3 class="card-title">图片来源设置</h3>
+          
+          <div class="checkbox-list">
+            <label class="checkbox-item">
+              <input type="checkbox" id="includeBackground">
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-label">
+                <span class="label-text">包含背景图片</span>
+                <span class="label-hint">扫描 CSS background-image 中的图片</span>
+              </span>
+            </label>
+
+            <label class="checkbox-item">
+              <input type="checkbox" id="includeMeta">
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-label">
+                <span class="label-text">包含元数据图片</span>
+                <span class="label-hint">扫描 og:image、twitter:image 等 meta 标签</span>
+              </span>
+            </label>
+
+            <label class="checkbox-item">
+              <input type="checkbox" id="includeDataUrl">
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-label">
+                <span class="label-text">包含 Data URL 图片</span>
+                <span class="label-hint">扫描 base64 编码的内联图片（可能占用更多内存）</span>
+              </span>
+            </label>
+
+            <label class="checkbox-item">
+              <input type="checkbox" id="includeLinks">
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-label">
+                <span class="label-text">包含链接指向的图片</span>
+                <span class="label-hint">扫描指向图片文件的 a 标签链接</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <h3 class="card-title">懒加载检测</h3>
+          
+          <div class="form-group">
+            <label for="lazyAttributes">
+              懒加载属性列表
+              <span class="hint">用于检测懒加载图片的 data 属性（逗号分隔）</span>
+            </label>
+            <textarea id="lazyAttributes" rows="3">data-src, data-lazy-src, data-original, data-lazy, data-srcset, data-lazy-srcset, data-bg, data-background</textarea>
+          </div>
         </div>
       </section>
 
       <!-- 高级设置 -->
-      <section class="section">
-        <h2>🔧 高级设置</h2>
-        
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="showNotifications">
-            <span>下载完成时显示通知</span>
-          </label>
+      <section class="tab-content" id="tab-advanced">
+        <div class="section-header">
+          <h2>⚙️ 高级设置</h2>
+          <p class="section-desc">配置重试策略、网络超时等高级选项</p>
         </div>
 
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="autoRename">
-            <span>自动重命名重复文件</span>
-          </label>
+        <div class="form-card">
+          <h3 class="card-title">重试策略</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="maxRetries">
+                最大重试次数
+                <span class="hint">下载失败时的重试次数</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">🔁</span>
+                <input type="number" id="maxRetries" min="0" max="10">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="retryDelay">
+                重试间隔
+                <span class="hint">每次重试之间的等待毫秒数</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">⏱️</span>
+                <input type="number" id="retryDelay" min="100" max="10000">
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="includeDataUrl">
-            <span>包含 Data URL 图片（base64）</span>
+        <div class="form-card">
+          <h3 class="card-title">网络设置</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="downloadTimeout">
+                下载超时
+                <span class="hint">单张图片下载的超时时间（毫秒）</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">⏰</span>
+                <input type="number" id="downloadTimeout" min="1000" max="120000">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="messageTimeout">
+                消息超时
+                <span class="hint">Content Script 通信超时（毫秒）</span>
+              </label>
+              <div class="input-with-icon">
+                <span class="input-icon">📨</span>
+                <input type="number" id="messageTimeout" min="1000" max="30000">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <h3 class="card-title">性能优化</h3>
+          
+          <div class="checkbox-list">
+            <label class="checkbox-item">
+              <input type="checkbox" id="enableThumbnailCache">
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-label">
+                <span class="label-text">启用缩略图缓存</span>
+                <span class="label-hint">缓存图片缩略图以提升重复访问时的加载速度</span>
+              </span>
+            </label>
+
+            <label class="checkbox-item">
+              <input type="checkbox" id="deferImageLoading">
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-label">
+                <span class="label-text">延迟图片预览加载</span>
+                <span class="label-hint">图片预览网格使用懒加载以减少内存占用</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <h3 class="card-title">调试模式</h3>
+          
+          <label class="checkbox-item">
+            <input type="checkbox" id="debugMode">
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-label">
+              <span class="label-text">启用调试日志</span>
+              <span class="label-hint">在控制台输出详细的调试信息</span>
+            </span>
           </label>
         </div>
       </section>
-
-      <!-- 按钮区域 -->
-      <div class="button-group">
-        <button class="btn btn-primary" id="saveBtn">💾 保存设置</button>
-        <button class="btn btn-secondary" id="resetBtn">🔄 恢复默认</button>
-      </div>
     </main>
 
-    <footer class="footer">
-      <p>图片批量下载器 v1.0.0</p>
-    </footer>
+    <!-- 操作按钮 -->
+    <div class="action-bar">
+      <div class="action-left">
+        <button class="btn btn-secondary" id="exportBtn">
+          <span class="btn-icon">📤</span>
+          <span>导出配置</span>
+        </button>
+        <button class="btn btn-secondary" id="importBtn">
+          <span class="btn-icon">📥</span>
+          <span>导入配置</span>
+        </button>
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+      </div>
+      <div class="action-right">
+        <button class="btn btn-danger" id="resetBtn">
+          <span class="btn-icon">🔄</span>
+          <span>恢复默认</span>
+        </button>
+        <button class="btn btn-primary" id="saveBtn">
+          <span class="btn-icon">💾</span>
+          <span>保存设置</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 提示条 -->
+    <div class="toast" id="toast">
+      <span class="toast-icon" id="toastIcon">✅</span>
+      <span class="toast-message" id="toastMessage">设置已保存</span>
+    </div>
   </div>
 
   <script src="options.js"></script>
