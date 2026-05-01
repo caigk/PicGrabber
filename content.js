@@ -853,72 +853,81 @@
     }));
   }
 
-  // ==================== 初始化 ====================
+  // ==================== 消息处理函数 ====================
 
-  console.log('[PicGrabber] Content script loaded (optimized version)');
+  function handleMessage(message, sender, sendResponse) {
+    console.log('[PicGrabber] Received message:', message.action);
 
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     switch (message.action) {
       case 'scanImages': {
         try {
           const options = message.options || {};
           const images = scanImages(options);
-          sendResponse({ 
+          const result = { 
             success: true, 
             totalImages: formatImageResult(images),
             count: images.length
-          });
+          };
+          console.log('[PicGrabber] Scan result:', images.length, 'images');
+          sendResponse(result);
         } catch (error) {
           console.error('[PicGrabber] Scan error:', error);
           sendResponse({ success: false, error: error.message });
         }
-        break;
+        return false;
       }
 
       case 'autoScroll': {
-        try {
-          const options = message.options || {};
-          
-          autoScroll({
-            ...options,
-            onProgress: (progress) => {
-              sendMessage('scrollProgress', progress);
-            }
-          })
-            .then(result => {
-              sendMessage('scrollComplete', {
-                ...result,
-                totalImages: formatImageResult(result.totalImages)
-              });
-              sendResponse({ 
-                success: true, 
-                scrollCount: result.scrollCount,
-                totalImages: formatImageResult(result.totalImages),
-                newImages: result.newImages
-              });
-            })
-            .catch(error => {
-              console.error('[PicGrabber] Auto scroll error:', error);
-              sendResponse({ success: false, error: error.message });
+        console.log('[PicGrabber] Starting auto scroll...');
+        
+        const handleAutoScroll = async () => {
+          try {
+            const options = message.options || {};
+            
+            const result = await autoScroll({
+              ...options,
+              onProgress: (progress) => {
+                sendMessage('scrollProgress', progress);
+              }
             });
-        } catch (error) {
-          console.error('[PicGrabber] Auto scroll error:', error);
-          sendResponse({ success: false, error: error.message });
-        }
+            
+            sendMessage('scrollComplete', {
+              ...result,
+              totalImages: formatImageResult(result.totalImages)
+            });
+            
+            const response = { 
+              success: true, 
+              scrollCount: result.scrollCount,
+              totalImages: formatImageResult(result.totalImages),
+              newImages: result.newImages
+            };
+            
+            console.log('[PicGrabber] Auto scroll complete:', result.scrollCount, 'scrolls,', result.totalImages?.length || 0, 'images');
+            sendResponse(response);
+          } catch (error) {
+            console.error('[PicGrabber] Auto scroll error:', error);
+            sendResponse({ success: false, error: error.message });
+          }
+        };
+        
+        handleAutoScroll();
         return true;
       }
 
       case 'stopScroll': {
         scanState.shouldStopScroll = true;
+        console.log('[PicGrabber] Scroll stopped');
         sendResponse({ success: true, message: 'Scroll stopped' });
-        break;
+        return false;
       }
 
       case 'getPageInfo': {
         try {
           const allImgs = scanImages();
           const pageType = detectPageType();
-          sendResponse({
+          
+          const result = {
             success: true,
             data: {
               url: window.location.href,
@@ -927,7 +936,10 @@
               totalImages: formatImageResult(allImgs),
               pageType
             }
-          });
+          };
+          
+          console.log('[PicGrabber] Page info:', document.title, allImgs.length, 'images');
+          sendResponse(result);
         } catch (error) {
           console.error('[PicGrabber] Get page info error:', error);
           sendResponse({
@@ -935,16 +947,52 @@
             error: error.message
           });
         }
-        break;
+        return false;
       }
       
       case 'ping': {
-        sendResponse({ success: true, message: 'pong' });
-        break;
+        console.log('[PicGrabber] Ping received');
+        sendResponse({ success: true, message: 'pong', timestamp: Date.now() });
+        return false;
+      }
+      
+      default: {
+        console.log('[PicGrabber] Unknown message action:', message.action);
+        sendResponse({ success: false, error: 'Unknown action: ' + message.action });
+        return false;
       }
     }
-    return true;
-  });
+  }
+
+  // ==================== 初始化 ====================
+
+  console.log('[PicGrabber] Content script loaded (optimized version)');
+  console.log('[PicGrabber] URL:', window.location.href);
+
+  // 确保消息监听器已正确注册
+  if (chrome.runtime && chrome.runtime.onMessage) {
+    // 先移除可能存在的旧监听器（避免重复注册）
+    try {
+      chrome.runtime.onMessage.removeListener(handleMessage);
+    } catch (e) {
+      // 忽略移除不存在监听器的错误
+    }
+    
+    // 注册新的消息监听器
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      try {
+        return handleMessage(message, sender, sendResponse);
+      } catch (error) {
+        console.error('[PicGrabber] Message handler error:', error);
+        sendResponse({ success: false, error: error.message });
+        return false;
+      }
+    });
+    
+    console.log('[PicGrabber] Message listener registered successfully');
+  } else {
+    console.error('[PicGrabber] chrome.runtime.onMessage is not available');
+  }
 
   if (typeof window !== 'undefined') {
     window.__picgrabber = {

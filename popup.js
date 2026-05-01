@@ -186,6 +186,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       state.currentTabId = tab.id;
 
+      if (isChromeInternalPage(tab.url)) {
+        elements.pageTitle.textContent = 'Chrome 内部页面';
+        elements.imageCount.textContent = '扩展无法访问此页面';
+        showStatus('Chrome 内部页面无法被扩展访问', 'warning');
+        return;
+      }
+
       const response = await safeSendMessage(tab.id, { action: 'getPageInfo' });
 
       if (response && response.success) {
@@ -212,9 +219,51 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     } catch (error) {
       console.error('Failed to get page info:', error);
-      elements.pageTitle.textContent = '请刷新页面后重试';
-      elements.imageCount.textContent = '-';
+      
+      const errorMessage = analyzeConnectionError(error);
+      elements.pageTitle.textContent = errorMessage.title;
+      elements.imageCount.textContent = errorMessage.subtitle;
+      showStatus(errorMessage.hint, 'warning');
     }
+  }
+
+  function isChromeInternalPage(url) {
+    if (!url) return false;
+    const internalPatterns = [
+      'chrome://',
+      'chrome-extension://',
+      'about:',
+      'chrome-search://',
+      'chrome-devtools://'
+    ];
+    return internalPatterns.some(pattern => url.startsWith(pattern));
+  }
+
+  function analyzeConnectionError(error) {
+    const errorStr = error.message || String(error);
+    
+    if (errorStr.includes('Receiving end does not exist') || 
+        errorStr.includes('Could not establish connection')) {
+      return {
+        title: 'Content Script 未加载',
+        subtitle: '请刷新页面后重试',
+        hint: '页面在扩展安装/更新前已打开，请刷新页面使扩展生效'
+      };
+    }
+    
+    if (errorStr.includes('Cannot access contents of url')) {
+      return {
+        title: '无法访问此页面',
+        subtitle: '权限不足',
+        hint: '扩展无法访问 Chrome 内部页面或受保护的页面'
+      };
+    }
+    
+    return {
+      title: '连接失败',
+      subtitle: '请刷新页面后重试',
+      hint: '与页面通信失败：' + errorStr
+    };
   }
 
   async function safeSendMessage(tabId, message, options = {}) {
